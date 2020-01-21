@@ -117,7 +117,6 @@ options(
     ##
 library(magrittr)
 library(plyr)
-library(tidyverse)
 x <- read.csv("Stony_Ford_pilot.csv")
 names(x)
 colnames(x)[1] <- "year"
@@ -245,6 +244,8 @@ mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=3.5)
 
 <<echo=FALSE, dev='png', fig.keep='high', fig.width=8, fig.height=5, fig.cap="Here we show that Th1ness and Th2ness are strongly negatively correlated with one another, in terms of the fraction of CD4+ T-cells expressing IL-13 versus IFNg. Point size in these figures is proportional to worm burden. It's hard to draw many conclusions from the data from the MLN - there are far fewer datapoints overall, and none of the datapoints came from animals with high worm burden.">>=
 
+z <- y[grep("Infected",y$treatment),]
+
 par(mfrow=c(1,2), mar=c(5,6,0.5,0.5), oma=rep(0,4))
 plot(z$gp.il13, z$gp.ifn, xlim=range(z$gp.il13,na.rm=T), ylim=range(z$gp.ifn,na.rm=T), xlab='', ylab='', pch=21, bg=1, cex=z$worm.count/20+1)
 mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=3.5)
@@ -256,6 +257,47 @@ mtext(side=2, "Mesenteric lymph\nIFNg (pg/ml)", line=3.5)
 
 
 @
+
+
+<<echo=FALSE, dev='png', res=500, fig.keep='high', fig.width=12, fig.height=5, fig.cap="(A) The rearing environment (lab versus wild) has a large effect on worm burden at 3- or 4-weeks post-infection. However, within treatments, there is considerable individual variation in worm burden. (B) Worm burden has a strong negative correlation with the fraction of CD4+ T-cells expressing Th2 cytokines, as expected. (C) Expression of Th2 cytokines by CD4+ T-cells is negatively correlated with expression of Th1 cytokines, further indicating that chronicity is determined by the immune-parasite battle over Th1-Th2 cytokine expression.">>=
+
+par(mfrow=c(1,3), mar=c(3,3,0.5,0.5), oma=c(3,3,0,0))
+## points plots focus attention on variability
+plot.new()
+plot.window(xlim=c(0.5,3.5), ylim=range(y$worm.count,na.rm=T))
+axis(2, tick=T, labels=TRUE, cex.axis=1.5);
+axis(1, at=1:3, tick=F, labels=c("Long-term\nwild","Short-term\nwild","Lab"), cex.axis=1.5, gap.axis=1, padj=1);
+box('plot')
+with(subset(y, push.to.IFN=="strong"), points(jitter(rep(1,length(worm.count)),factor=4), worm.count, pch=21, cex=2, bg=1))
+with(subset(y, push.to.IFN=="moderate"), points(jitter(rep(2,length(worm.count)),factor=4), worm.count, pch=21, cex=2, bg=2))
+with(subset(y, push.to.IFN=="weak"), points(jitter(rep(3,length(worm.count)),factor=4), worm.count, pch=21, cex=2, bg=3))
+mtext(side=2, line=1, outer=T, "Worm burden")
+legend(x='topleft', "A", bty='n', cex=1.75)
+
+with(y[grep("Infected",y$treatment),], plot(gp.il13, worm.count, cex=2, pch=21, bg=as.numeric(push.to.IFN), xlab="", ylab="", cex.axis=1.5))
+legend(x='topright', c("Long-term wild", "Short-term wild", "Lab"), pch=21, pt.bg=c(1,2,3), cex=1.3)
+mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=3.8)
+legend(x='topleft', "B", bty='n', cex=1.75)
+
+z <- y[grep("Infected",y$treatment),]
+
+par(mar=c(3,6,0.5,0.5))
+plot(z$gp.il13, z$gp.ifn, xlim=range(z$gp.il13,na.rm=T), ylim=range(z$gp.ifn,na.rm=T), xlab='', ylab='', pch=21, bg=as.numeric(z$push.to.IFN), cex=z$worm.count/20+2, cex.axis=1.5)
+mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=3.8)
+mtext(side=2, "Lamina propria\n%IFNg+ CD4+ cells", line=3.2)
+#legend(x='topright', c("\n0 worms", "\n20 worms", "\n60 worms", "\n100 worms"))
+points(rep(26,4), c(51,49,47,44), pch=21, bg=1, cex=c(1,2,4,6))
+text(33, 51, "0 worms", cex=1.3)
+text(33, 49, "20 worms", cex=1.3)
+text(33, 47, "60 worms", cex=1.3)
+text(33, 44, "100 worms", cex=1.3)
+lines(c(22,22), c(41.5,55))
+lines(c(22,40), c(41.5,41.5))
+legend(x='topleft', "C", bty='n', cex=1.75)
+
+@
+
+
 
 
 \end{document}
