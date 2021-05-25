@@ -1,0 +1,213 @@
+---
+title: "Data Figure for NIH"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      dev=c('png','tiff'),
+                      fig.path='figures/')
+```
+
+
+```{r data_org}
+library(tidyverse)
+x <- read.csv("Stony_Ford_pilot.csv")
+names(x)
+colnames(x)[1] <- "year"
+colnames(x)[7] <- "mln.ifn"
+colnames(x)[8] <- "mln.il13"
+colnames(x)[9] <- "gp.ifn"
+colnames(x)[10] <- "gp.il13"
+mutate(x,
+       mln.ifn=as.numeric(mln.ifn),
+       mln.il13=as.numeric(mln.il13),
+       treatment=as.factor(treatment),
+       push.to.IFN=as.factor(push.to.IFN)) -> x
+## for each infected treatment, condense
+lapply(levels(x$treatment),
+       function(t) ## build a dataframe with the key information for this treatment
+           data.frame(year=subset(x, treatment==t)[1,'year'],
+                      treatment=subset(x, treatment==t)[1,'treatment'],
+                      push.to.IFN=subset(x, treatment==t)[1,'push.to.IFN'],
+                      timepoint=subset(x, treatment==t)[1:(nrow(subset(x,treatment==t))/2),"timepoint"],
+                      gp.ifn=subset(x, treatment==t)[1:(nrow(subset(x,treatment==t))/2),"gp.ifn"],
+                      gp.il13=subset(x, treatment==t)[1:(nrow(subset(x,treatment==t))/2),"gp.il13"],
+                      mln.ifn=subset(x, treatment==t)[(nrow(subset(x,treatment==t))/2+1):nrow(subset(x,treatment==t)),"mln.ifn"],
+                      mln.il13=subset(x, treatment==t)[(nrow(subset(x,treatment==t))/2+1):nrow(subset(x,treatment==t)),"mln.il13"],
+                      worm.count=subset(x, treatment==t)[1:(nrow(subset(x,treatment==t))/2),"worm.count"],
+                      worm.biomass=subset(x, treatment==t)[1:(nrow(subset(x,treatment==t))/2),"worm.biomass"])
+       ) %>% do.call(rbind.data.frame, .)  -> y
+
+y$push.to.IFN <- relevel(y$push.to.IFN, "strong")
+
+```
+
+```{r data_viz_1, echo=FALSE, fig.width=8, fig.height=5, fig.cap="There are many different ways to visualize this data. One possibility is to draw a constrast between the way immunological studies often represent data, which emphasizes mean differences between treatments, and a representation that emphasizes the variability among individuals within a treatment. Here I do that, representing treatments only in the non-specific way they were referenced in the datafile itself, in terms of the environmental push towards a Th1 (IFNg) response. That way of discussing treatment emphasizes that, as the push towards Th1 strengthens, so too does the worm burden."}
+## Two ways to visualize worm burden
+par(mfrow=c(1,2), mar=c(3,1.5,0.5,0.5), oma=c(2,2.5,0,0))
+## box plots focus attention on mean differences
+with(y, plot(push.to.IFN, worm.count, pch=21))
+## points plots focus attention on variability
+plot.new()
+plot.window(xlim=c(0.5,3.5), ylim=range(y$worm.count,na.rm=T))
+axis(2, tick=T, labels=FALSE);axis(1, at=1:3, tick=T, labels=c("strong","moderate","weak"));box('plot')
+with(y, points(push.to.IFN, worm.count, pch=21, cex=1.5, bg=1))
+mtext(side=1, line=0, outer=T, "Push towards Th1 response")
+mtext(side=2, line=1, outer=T, "Worm burden")
+```
+
+```{r data_viz_2, echo=FALSE, fig.width=8, fig.height=5, fig.cap="However, there is also an argument that we should talk about this data in terms of the environmental treatments, since the Stony Ford aspect of this project is very important. The left panel of this figure is essentially identical to Fig. 2 of Leung et al. 2018."}
+par(mfrow=c(1,2), mar=c(3,1.5,0.5,0.5), oma=c(2,2.5,0,0))
+## box plots focus attention on mean differences
+with(y, plot(push.to.IFN, worm.count, pch=21, xaxt='n'))
+axis(1, at=1:3, tick=F, labels=c("Long-term\nwild","Short-term\nwild","Lab"), cex.axis=0.9)
+## points plots focus attention on variability
+plot.new()
+plot.window(xlim=c(0.5,3.5), ylim=range(y$worm.count,na.rm=T))
+axis(2, tick=T, labels=FALSE);axis(1, at=1:3, tick=F, labels=c("Long-term\nwild","Short-term\nwild","Lab"), cex.axis=0.9);box('plot')
+with(y, points(jitter(as.numeric(push.to.IFN)), worm.count, pch=21, cex=1.5, bg=0))
+mtext(side=1, line=0, outer=T, "Mouse rearing environment")
+mtext(side=2, line=1, outer=T, "Worm burden")
+```
+
+```{r data_viz_3, echo=FALSE, fig.width=8, fig.height=5, fig.cap="This is very much like the preceding figure, except focused on worm biomass rather than worm burden."}
+par(mfrow=c(1,2), mar=c(3,1.5,0.5,0.5), oma=c(2,2.5,0,0))
+## box plots focus attention on mean differences
+with(y, plot(push.to.IFN, worm.biomass, pch=21, xaxt='n'))
+axis(1, at=1:3, tick=F, labels=c("Long-term\nwild","Short-term\nwild","Lab"), cex.axis=0.9)
+## points plots focus attention on variability
+plot.new()
+plot.window(xlim=c(0.5,3.5), ylim=range(y$worm.biomass,na.rm=T))
+axis(2, tick=T, labels=FALSE);axis(1, at=1:3, tick=F, labels=c("Long-term\nwild","Short-term\nwild","Lab"), cex.axis=0.9);box('plot')
+with(y, points(jitter(as.numeric(push.to.IFN)), worm.biomass, pch=21, cex=1.5, bg=0))
+mtext(side=1, line=0, outer=T, "Mouse rearing environment")
+mtext(side=2, line=1, outer=T, "Worm biomass")
+```
+
+```{r data_viz_4, echo=FALSE, fig.width=8, fig.height=9, fig.cap="Another thing that we want to show is that, across these environments, what predicts worm burden or biomass is actually that push towards Th1ness vs Th2ness. Here we can see that looking at the Th2 response in both the mesenteric lymph node and the lamina propria - the pattern is most obvious in the data from the lamina propria: the higher the fraction of CD4+ T-cells producing IL-13, the lower the worm burden, regardless of sampling date. In the lymph node, the relationship between total concentration of cytokine and worm burden is different at the different time points: at 3 weeks post-infection, high IL-13 is associated with low worm burden; at 4 weeks post-infection (when most individuals have cleared the infection (low worm burdens), the cytokine levels are much lower, likely reflecting reduced production of IL-13 due to the lower worm burden."}
+mutate(y,
+       time=as.factor(round(timepoint/7))) -> y
+
+par(mfrow=c(2,2), mar=c(3,3,1,1), oma=c(2,2,0,0))
+with(y[grep("Infected",y$treatment),], plot(mln.il13, worm.count, cex=2, pch=21+as.numeric(time), bg=as.numeric(push.to.IFN), xlab="", ylab=""))
+mtext(side=2, "Worm burden", line=3)
+with(y[grep("Infected",y$treatment),], plot(gp.il13, worm.count, cex=2, pch=21+as.numeric(time), bg=as.numeric(push.to.IFN), xlab="", ylab=""))
+legend(x='topright', c("Long-term wild", "Short-term wild", "Lab", "Week 3 PI", "Week 4 PI"), pch=c(22,22,22,22,23), pt.bg=c(1,2,3,0,0), bty='n')
+
+with(y[grep("Infected",y$treatment),], plot(mln.il13, worm.biomass, cex=2, pch=21+as.numeric(time), bg=as.numeric(push.to.IFN), xlab="", ylab=""))
+mtext(side=1, "Mesenteric lymph\nIL-13 (pg/ml)", line=3.5)
+mtext(side=2, "Worm biomass", line=3)
+with(y[grep("Infected",y$treatment),], plot(gp.il13, worm.biomass, cex=2, pch=21+as.numeric(time), bg=as.numeric(push.to.IFN), xlab="", ylab=""))
+mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=3.5)
+
+```
+
+```{r data_viz_5, echo=FALSE, fig.keep='high', fig.width=8, fig.height=9, fig.cap="This figure is identical to the preceding one, except that it only looks at the three-week data, which cleans up the resuls quite a lot. There are still some datapoints for the MLN data where individuals have low burdens and low IL-13, possibly because they are clearing the infection."}
+par(mfrow=c(2,2), mar=c(3,3,1,1), oma=c(2,2,0,0))
+with(subset(y[grep("Infected",y$treatment),], time=="3"),
+     plot(mln.il13, worm.count, cex=2, pch=22, bg=as.numeric(push.to.IFN), xlab="", ylab=""))
+mtext(side=2, "Worm burden", line=3)
+with(subset(y[grep("Infected",y$treatment),], time=="3"),
+     plot(gp.il13, worm.count, cex=2, pch=22, bg=as.numeric(push.to.IFN), xlab="", ylab=""))
+legend(x='topright', c("Long-term wild", "Short-term wild", "Lab"), pch=22, pt.bg=c(1,2,3), bty='n')
+
+with(subset(y[grep("Infected",y$treatment),], time=="3"),
+     plot(mln.il13, worm.biomass, cex=2, pch=22, bg=as.numeric(push.to.IFN), xlab="", ylab=""))
+mtext(side=1, "Mesenteric lymph\nIL-13 (pg/ml)", line=3.5)
+mtext(side=2, "Worm biomass", line=3)
+with(subset(y[grep("Infected",y$treatment),], time=="3"),
+     plot(gp.il13, worm.biomass, cex=2, pch=22, bg=as.numeric(push.to.IFN), xlab="", ylab=""))
+mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=3.5)
+```
+
+```{r data_viz_6, echo=FALSE, fig.keep='high', fig.width=8, fig.height=5, fig.cap="Here we show that Th1ness and Th2ness are strongly negatively correlated with one another, in terms of the fraction of CD4+ T-cells expressing IL-13 versus IFNg. Point size in these figures is proportional to worm burden. It's hard to draw many conclusions from the data from the MLN - there are far fewer datapoints overall, and none of the datapoints came from animals with high worm burden."}
+z <- y[grep("Infected",y$treatment),]
+
+par(mfrow=c(1,2), mar=c(5,6,0.5,0.5), oma=rep(0,4))
+plot(z$gp.il13, z$gp.ifn, xlim=range(z$gp.il13,na.rm=T), ylim=range(z$gp.ifn,na.rm=T), xlab='', ylab='', pch=21, bg=1, cex=z$worm.count/20+1)
+mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=3.5)
+mtext(side=2, "Lamina propria\n%IFNg+ CD4+ cells", line=3.5)
+
+plot(z$mln.il13, z$mln.ifn, ylim=c(0,1000), xlab='', ylab='', pch=21, bg=1, cex=z$worm.count/20+1)
+mtext(side=1, "Mesenteric lymph\nIL-13 (pg/ml)", line=3.5)
+mtext(side=2, "Mesenteric lymph\nIFNg (pg/ml)", line=3.5)
+
+```
+
+
+```{r data_viz_7, echo=FALSE, fig.width=12, fig.height=4, fig.cap="(A) The rearing environment (lab versus wild) has a large effect on worm burden at 3- or 4-weeks post-infection. However, within treatments, there is considerable individual variation in worm burden. (B) Worm burden has a strong negative correlation with the fraction of CD4+ T-cells expressing Th2 cytokines, as expected. (C) Expression of Th2 cytokines by CD4+ T-cells is negatively correlated with expression of Th1 cytokines, further indicating that chronicity is determined by the immune-parasite battle over Th1-Th2 cytokine expression."}
+par(mfrow=c(1,3), mar=c(4,4,0.5,0.5), oma=c(3,3,0,0))
+## points plots focus attention on variability
+plot.new()
+plot.window(xlim=c(0.5,3.5), ylim=range(y$worm.count,na.rm=T))
+axis(2, tick=T, labels=TRUE, cex.axis=1.8);
+axis(1, at=1:3, tick=T, labels=F);
+box('plot')
+with(subset(y, push.to.IFN=="strong"), points(jitter(rep(1,length(worm.count)),factor=4), worm.count, pch=21, cex=2.5, bg=1))
+with(subset(y, push.to.IFN=="moderate"), points(jitter(rep(2,length(worm.count)),factor=4), worm.count, pch=21, cex=2.5, bg=2))
+with(subset(y, push.to.IFN=="weak"), points(jitter(rep(3,length(worm.count)),factor=4), worm.count, pch=21, cex=2.5, bg=3))
+mtext(side=2, line=1, outer=T, "Worm burden", cex=1.5)
+mtext(side=1, line=3, "Rearing environment", cex=1.5)
+legend(x='topright', c("Long-term\nwild", "Short-term\nwild", "Lab"), pch=21, pt.bg=c(1,2,3), cex=1.75, pt.cex=2)
+
+with(y[grep("Infected",y$treatment),], plot(gp.il13, worm.count, cex=2.5, pch=21, bg=as.numeric(push.to.IFN), xlab="", ylab="", cex.axis=1.8))
+mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=5.2, cex=1.5)
+
+z <- y[grep("Infected",y$treatment),]
+
+par(mar=c(4,8,0.5,0))
+plot(z$gp.il13, z$gp.ifn, xlim=range(z$gp.il13,na.rm=T), ylim=range(z$gp.ifn,na.rm=T), xlab='', ylab='', pch=21, bg=as.numeric(z$push.to.IFN), cex=z$worm.count/20+2.5, cex.axis=1.8)
+mtext(side=1, "Lamina propria\n%IL-13+ CD4+ cells", line=5.2, cex=1.5)
+mtext(side=2, "Lamina propria\n%IFNg+ CD4+ cells", line=4, cex=1.5)
+#legend(x='topright', c("\n0 worms", "\n20 worms", "\n60 worms", "\n100 worms"))
+points(rep(21,4), c(51,48,45,41), pch=21, bg=1, cex=c(1,2,4,6))
+text(31, 51, "0 worms", cex=2)
+text(31, 48, "20 worms", cex=2)
+text(31, 45, "60 worms", cex=2)
+text(31, 41, "100 worms", cex=2)
+lines(c(19,19), c(38,55))
+lines(c(19,38), c(38,38))
+
+```
+
+```{r data_viz_8, echo=FALSE, fig.width=12, fig.height=4, fig.cap="Stony Ford burden and immune data, as well as Ramya's dose-response data. The Th1 response is quantified as as the fraction of CD4+ T-cells expressing IFNg in the lamina propria, whereas the Th2 response is quantified as the fraction of CD4+ T-cells expressing IL-13."}
+
+z <- read.csv("T_muris_dose_response.csv")
+## Plot worm burden by dose
+z %>% 
+  group_by(Category, Mouse.ID) %>% 
+  summarise(burden=sum(Broken.Y.N.%in%c("N","Y(Head)","Y (Head)","Y(Head+Tail)"))) -> z2
+
+
+par(mfrow=c(1,3), mar=c(5,5,0.5,0.5), oma=c(1,1,0,0))
+boxplot(y$worm.count~y$push.to.IFN, outline=FALSE, names=c('','',''), xlab="", ylab="", cex.axis=1.8)
+with(subset(y, push.to.IFN=="strong"), points(jitter(rep(1,length(worm.count)),factor=4), worm.count, pch=21, cex=2, bg=1))
+with(subset(y, push.to.IFN=="moderate"), points(jitter(rep(2,length(worm.count)),factor=4), worm.count, pch=21, cex=2, bg=2))
+with(subset(y, push.to.IFN=="weak"), points(jitter(rep(3,length(worm.count)),factor=4), worm.count, pch=21, cex=2, bg=3))
+mtext(side=2, line=3, "Worm burden", cex=1.5)
+mtext(side=1, line=3, "Environment", cex=1.5)
+legend(x='topright', c("Long-term\nwild", "Short-term\nwild", "Lab"), pch=21, pt.bg=c(1,2,3), cex=1.75, pt.cex=2)
+
+z <- y[grep("Infected",y$treatment),]
+
+plot(z$gp.il13, z$gp.ifn, xlim=range(z$gp.il13,na.rm=T), ylim=range(z$gp.ifn,na.rm=T), xlab='', ylab='', pch=21, bg=as.numeric(z$push.to.IFN), cex=z$worm.count/20+2.5, cex.axis=1.8)
+mtext(side=1, "Th2 response", line=3, cex=1.5)
+mtext(side=2, "Th1 response", line=3, cex=1.5)
+#legend(x='topright', c("\n0 worms", "\n20 worms", "\n60 worms", "\n100 worms"))
+points(rep(21,4), c(51,48,45,41), pch=21, bg=1, cex=c(1,2,4,6))
+text(31, 51, "0 worms", cex=2)
+text(31, 48, "20 worms", cex=2)
+text(31, 45, "60 worms", cex=2)
+text(31, 41, "100 worms", cex=2)
+lines(c(19,19), c(38,55))
+lines(c(19,38), c(38,38))
+
+boxplot(z2$burden~z2$Category, xlab="", ylab="", outline=FALSE, cex.axis=1.8)
+points(jitter(as.numeric(as.factor(z2$Category)), amount=0.1), z2$burden, cex=2)
+mtext(side=1, "Dose", line=3, cex=1.5)
+mtext(side=2, "Worm burden", line=3, cex=1.5)
+
+
+
+```
