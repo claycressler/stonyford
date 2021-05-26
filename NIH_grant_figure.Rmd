@@ -188,6 +188,7 @@ with(subset(y, push.to.IFN=="weak"), points(jitter(rep(3,length(worm.count)),fac
 mtext(side=2, line=3, "Worm burden", cex=1.5)
 mtext(side=1, line=3, "Environment", cex=1.5)
 legend(x='topright', c("Long-term\nwild", "Short-term\nwild", "Lab"), pch=21, pt.bg=c(1,2,3), cex=1.75, pt.cex=2)
+legend(x='topleft', c("A"), cex=1.75, bty='n', adj=c(1.75,0))
 
 z <- y[grep("Infected",y$treatment),]
 
@@ -202,11 +203,13 @@ text(31, 45, "60 worms", cex=2)
 text(31, 41, "100 worms", cex=2)
 lines(c(19,19), c(38,55))
 lines(c(19,38), c(38,38))
+legend(x='topleft', c("B"), cex=1.75, bty='n', adj=c(1.75,0))
 
 boxplot(z2$burden~z2$Category, xlab="", ylab="", outline=FALSE, cex.axis=1.8)
 points(jitter(as.numeric(as.factor(z2$Category)), amount=0.1), z2$burden, cex=2)
 mtext(side=1, "Dose", line=3, cex=1.5)
 mtext(side=2, "Worm burden", line=3, cex=1.5)
+legend(x='topleft', c("C"), cex=1.75, bty='n', adj=c(1.75,0))
 
 
 
